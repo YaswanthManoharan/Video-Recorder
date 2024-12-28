@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const VideoRecorder: React.FC = () => {
   const [recording, setRecording] = useState(false);
+  const [cameraState, setCameraState] = useState(false);
   const [videoURL, setVideoURL] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoChunksRef = useRef<Blob[]>([]);
@@ -10,27 +11,36 @@ const VideoRecorder: React.FC = () => {
 
   useEffect(() => {
     const setupCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-        videoStreamRef.current = stream;
+      if (cameraState) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          videoStreamRef.current = stream;
 
-        if (videoElementRef.current) {
-          videoElementRef.current.srcObject = stream;
+          if (videoElementRef.current) {
+            videoElementRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera and microphone:', error);
         }
-      } catch (error) {
-        console.error('Error accessing camera and microphone:', error);
       }
     };
 
-    setupCamera();
+    if (cameraState) {
+      setupCamera();
+    } else {
+      // Stop the video stream when camera is off
+      videoStreamRef.current?.getTracks().forEach((track) => track.stop());
+      videoStreamRef.current = null;
+    }
 
+    // Cleanup on unmount or when cameraState changes
     return () => {
       videoStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [cameraState]);
 
   const startRecording = () => {
     if (videoStreamRef.current) {
@@ -59,6 +69,13 @@ const VideoRecorder: React.FC = () => {
     setRecording(false);
   };
 
+  const onCamera = () => {
+    setCameraState(true);
+  };
+  const offCamera = () => {
+    setCameraState(false);
+  };
+
   const resetPreview = () => {
     setVideoURL(null);
     setRecording(false);
@@ -75,18 +92,39 @@ const VideoRecorder: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
-        <h1>Video Recorder</h1>
+      <h1>Video Recorder</h1>
       <div className="w-full max-w-4xl">
-        <video
-          ref={videoElementRef}
-          autoPlay
-          muted={!recording}
-          className="border rounded-lg w-full"
-        />
+        {!cameraState ? (
+          <div className="w-full h-64 bg-gray-200 flex items-center justify-center border rounded-lg">
+            <p className="text-gray-600">Camera is Off</p>
+          </div>
+        ) : (
+          <video
+            ref={videoElementRef}
+            autoPlay
+            muted={!recording}
+            className="w-full h-64 object-cover border rounded-lg"
+          />
+        )}
       </div>
 
       <div className="flex space-x-4">
-        {!recording ? (
+        {!cameraState ? (
+          <button
+            className="bg-green-500 text-white px-6 py-3 rounded-lg"
+            onClick={onCamera}
+          >
+            On Camera
+          </button>
+        ) : (
+          <button
+            className="bg-red-500 text-white px-6 py-3 rounded-lg"
+            onClick={offCamera}
+          >
+            Off Camera
+          </button>
+        )}
+        {cameraState? (!recording? (
           <button
             className="bg-green-500 text-white px-6 py-3 rounded-lg"
             onClick={startRecording}
@@ -100,7 +138,7 @@ const VideoRecorder: React.FC = () => {
           >
             Stop Recording
           </button>
-        )}
+        )):null}
       </div>
 
       {videoURL && (
