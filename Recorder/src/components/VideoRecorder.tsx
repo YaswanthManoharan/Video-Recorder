@@ -5,10 +5,12 @@ const VideoRecorder: React.FC = () => {
   const [recording, setRecording] = useState(false);
   const [cameraState, setCameraState] = useState(false);
   const [videoURL, setVideoURL] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0); // Track elapsed time in seconds
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoChunksRef = useRef<Blob[]>([]);
   const videoStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const timerRef = useRef<number | null>(null); // Use number instead of NodeJS.Timeout
 
   useEffect(() => {
     const setupCamera = async () => {
@@ -62,12 +64,20 @@ const VideoRecorder: React.FC = () => {
 
       mediaRecorder.start();
       setRecording(true);
+
+      // Start the recording timer
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime((prevTime) => prevTime + 1);
+      }, 1000);
     }
   };
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
     setRecording(false);
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current); // Stop the timer when recording stops
+    }
   };
 
   const onCamera = () => {
@@ -80,6 +90,10 @@ const VideoRecorder: React.FC = () => {
   const resetPreview = () => {
     setVideoURL(null);
     setRecording(false);
+    setRecordingTime(0);
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current); // Reset the timer
+    }
   };
 
   const downloadVideo = () => {
@@ -91,21 +105,33 @@ const VideoRecorder: React.FC = () => {
     }
   };
 
+  const formatTime = (timeInSeconds: number) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
-
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl relative">
+        {/* Display recording indication and time when recording */}
+        {recording && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white px-3 py-1 rounded-lg">
+            <span className="font-medium">Recording</span> - {formatTime(recordingTime)}
+          </div>
+        )}
+        
         {!cameraState ? (
           <div className="w-full h-96 bg-gray-200 flex items-center justify-center border rounded-lg">
-          <CameraOffIcon />
-          <span className="text-red-500 font-medium">Camera is off</span>
+            <CameraOffIcon />
+            <span className="text-red-500 font-medium">Camera is off</span>
           </div>
         ) : (
           <video
             ref={videoElementRef}
             autoPlay
             muted={!recording}
-            className="w-full h-96 object-cover border rounded-lg"
+            className="w-full h-96 object-contain border rounded-lg" // Changed from object-cover to object-contain
           />
         )}
       </div>
@@ -126,28 +152,30 @@ const VideoRecorder: React.FC = () => {
             Off Camera
           </button>
         )}
-        {cameraState? (!recording? (
-          <button
-            className="bg-green-500 text-white px-6 py-3 rounded-lg"
-            onClick={startRecording}
-          >
-            Start Recording
-          </button>
-        ) : (
-          <button
-            className="bg-red-500 text-white px-6 py-3 rounded-lg"
-            onClick={stopRecording}
-          >
-            Stop Recording
-          </button>
-        )):null}
+        {cameraState ? (
+          !recording ? (
+            <button
+              className="bg-green-500 text-white px-6 py-3 rounded-lg"
+              onClick={startRecording}
+            >
+              Start Recording
+            </button>
+          ) : (
+            <button
+              className="bg-red-500 text-white px-6 py-3 rounded-lg"
+              onClick={stopRecording}
+            >
+              Stop Recording
+            </button>
+          )
+        ) : null}
       </div>
 
       {videoURL && (
         <div className="w-full max-w-4xl flex flex-col items-center space-y-4">
           <video
             controls
-            className="border rounded-lg w-full"
+            className="border rounded-lg w-full object-contain" // Ensure preview uses object-contain as well
             src={videoURL}
           />
           <div className="flex space-x-4">

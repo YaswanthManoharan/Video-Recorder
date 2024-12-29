@@ -129,7 +129,7 @@ const ScreenRecorder: React.FC = () => {
               ref={screenVideoRef}
               autoPlay
               muted
-              className="w-full h-full object-cover border rounded-lg"
+              className="w-full h-full object-contain border rounded-lg"
             />
             {isVideoEnabled && (
               <div className="absolute bottom-4 right-4 w-32 h-24 border rounded-lg overflow-hidden bg-black">
@@ -137,7 +137,7 @@ const ScreenRecorder: React.FC = () => {
                   ref={videoOverlayRef}
                   autoPlay
                   muted
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
