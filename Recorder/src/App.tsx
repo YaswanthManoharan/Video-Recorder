@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import VideoRecorder from './components/VideoRecorder';
+import RecorderSwitcher from './components/RecorderSwitcher';
 import Login from './components/Login';
 
 const App: React.FC = () => {
@@ -14,11 +14,7 @@ const App: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       {isLoggedIn && <Header onLogout={handleLogout} showLogout={true} />}
       <main className="flex-grow">
-        {isLoggedIn ? (
-          <VideoRecorder />
-        ) : (
-          <Login onLogin={handleLogin} />
-        )}
+        {isLoggedIn ? <RecorderSwitcher /> : <Login onLogin={handleLogin} />}
       </main>
       {isLoggedIn && <Footer />}
     </div>
