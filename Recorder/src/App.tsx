@@ -1,16 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import VideoRecorder from './components/VideoRecorder';
+import Login from './components/Login';
 
 const App: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleLogin = () => setIsLoggedIn(true);
+  const handleLogout = () => setIsLoggedIn(false);
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      {isLoggedIn && <Header onLogout={handleLogout} showLogout={true} />}
       <main className="flex-grow">
-        <VideoRecorder />
+        {isLoggedIn ? (
+          <VideoRecorder />
+        ) : (
+          <Login onLogin={handleLogin} />
+        )}
       </main>
-      <Footer />
+      {isLoggedIn && <Footer />}
     </div>
   );
 };
