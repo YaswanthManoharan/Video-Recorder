@@ -18,6 +18,7 @@ const ScreenRecorder: React.FC = () => {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
+          audio: true,
         });
         screenStreamRef.current = stream;
 

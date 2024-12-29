@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaVideo, FaDesktop } from 'react-icons/fa';
 import VideoRecorder from './VideoRecorder';
-import ScreenRecorder from './screenRecorder';
+import ScreenRecorder from './ScreenRecorder';
 
 const RecorderSwitcher: React.FC = () => {
   const [selectedRecorder, setSelectedRecorder] = useState<'video' | 'screen'>('video');
