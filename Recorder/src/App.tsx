@@ -1,14 +1,18 @@
-import VideoRecorder from "./components/videoRecorder"
+import React from 'react';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import VideoRecorder from './components/VideoRecorder';
 
-function App() {
-
+const App: React.FC = () => {
   return (
-    <>
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <VideoRecorder />
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">
+        <VideoRecorder />
+      </main>
+      <Footer />
     </div>
-    </>
-  )
-}
+  );
+};
 
-export default App
+export default App;

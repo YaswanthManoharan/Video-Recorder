@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import CameraOffIcon from '../assets/CameraOffIcon';
 
 const VideoRecorder: React.FC = () => {
   const [recording, setRecording] = useState(false);
@@ -92,18 +93,19 @@ const VideoRecorder: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
-      <h1>Video Recorder</h1>
+
       <div className="w-full max-w-4xl">
         {!cameraState ? (
-          <div className="w-full h-64 bg-gray-200 flex items-center justify-center border rounded-lg">
-            <p className="text-gray-600">Camera is Off</p>
+          <div className="w-full h-96 bg-gray-200 flex items-center justify-center border rounded-lg">
+          <CameraOffIcon />
+          <span className="text-red-500 font-medium">Camera is off</span>
           </div>
         ) : (
           <video
             ref={videoElementRef}
             autoPlay
             muted={!recording}
-            className="w-full h-64 object-cover border rounded-lg"
+            className="w-full h-96 object-cover border rounded-lg"
           />
         )}
       </div>
