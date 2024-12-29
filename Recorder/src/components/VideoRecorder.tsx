@@ -155,7 +155,7 @@ const VideoRecorder: React.FC = () => {
               className="bg-blue-500 text-white px-6 py-3 rounded-lg"
               onClick={downloadVideo}
             >
-              Download Video
+              Download Videoo
             </button>
             <button
               className="bg-gray-500 text-white px-6 py-3 rounded-lg"
