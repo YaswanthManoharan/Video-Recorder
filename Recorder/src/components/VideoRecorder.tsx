@@ -11,20 +11,32 @@ const VideoRecorder: React.FC = () => {
   const videoStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<number | null>(null); // Use number instead of NodeJS.Timeout
+  const audioTrackRef = useRef<MediaStreamTrack | null>(null); // Store the audio track separately
 
   useEffect(() => {
     const setupCamera = async () => {
       if (cameraState) {
         try {
+          // Get both video and audio streams
           const stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
           });
+
           videoStreamRef.current = stream;
 
+          // Separate the video and audio tracks
+          const videoTrack = stream.getVideoTracks()[0];
+          const audioTrack = stream.getAudioTracks()[0];
+
+          // Remove audio from the video feed by muting it
           if (videoElementRef.current) {
-            videoElementRef.current.srcObject = stream;
+            videoElementRef.current.srcObject = new MediaStream([videoTrack]);
           }
+
+          // Store the audio track for recording, but not for playback
+          audioTrackRef.current = audioTrack;
+
         } catch (error) {
           console.error('Error accessing camera and microphone:', error);
         }
@@ -34,20 +46,26 @@ const VideoRecorder: React.FC = () => {
     if (cameraState) {
       setupCamera();
     } else {
-      // Stop the video stream when camera is off
+      // Stop the video and audio streams when the camera is off
       videoStreamRef.current?.getTracks().forEach((track) => track.stop());
       videoStreamRef.current = null;
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop(); // Stop the audio track
+      }
     }
 
     // Cleanup on unmount or when cameraState changes
     return () => {
       videoStreamRef.current?.getTracks().forEach((track) => track.stop());
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop();
+      }
     };
   }, [cameraState]);
 
   const startRecording = () => {
-    if (videoStreamRef.current) {
-      const mediaRecorder = new MediaRecorder(videoStreamRef.current);
+    if (videoStreamRef.current && audioTrackRef.current) {
+      const mediaRecorder = new MediaRecorder(new MediaStream([audioTrackRef.current, videoStreamRef.current.getVideoTracks()[0]]));
       mediaRecorderRef.current = mediaRecorder;
 
       videoChunksRef.current = [];
@@ -130,7 +148,7 @@ const VideoRecorder: React.FC = () => {
           <video
             ref={videoElementRef}
             autoPlay
-            muted={!recording}
+            muted={false} // Video is not muted, but it's not including audio playback
             className="w-full h-96 object-contain border rounded-lg" // Changed from object-cover to object-contain
           />
         )}
