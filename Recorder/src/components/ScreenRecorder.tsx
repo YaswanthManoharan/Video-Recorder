@@ -113,7 +113,6 @@ const ScreenRecorder: React.FC = () => {
 
       drawFrame();
 
-      const canvasStream = canvas.captureStream();
       const mediaRecorder = new MediaRecorder(combinedStream);
       mediaRecorderRef.current = mediaRecorder;
 
