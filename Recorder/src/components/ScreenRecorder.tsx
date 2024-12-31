@@ -1,193 +1,189 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaDesktop, FaVideo } from 'react-icons/fa';
 
 const ScreenRecorder: React.FC = () => {
-  const [isScreenRecording, setIsScreenRecording] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false); // For external mic audio
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false); // For camera video
   const [videoURL, setVideoURL] = useState<string | null>(null);
 
   const screenStreamRef = useRef<MediaStream | null>(null);
-  const screenVideoRef = useRef<HTMLVideoElement | null>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
-  const videoOverlayRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const screenChunksRef = useRef<Blob[]>([]);
+  const chunksRef = useRef<Blob[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const audioTracksRef = useRef<MediaStreamTrack[] | null>(null); // For external mic audio
 
   useEffect(() => {
-    const startScreenRecording = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true,
-        });
-        screenStreamRef.current = stream;
-
-        if (screenVideoRef.current) {
-          screenVideoRef.current.srcObject = stream;
-        }
-
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-
-        screenChunksRef.current = [];
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            screenChunksRef.current.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(screenChunksRef.current, { type: 'video/webm' });
-          setVideoURL(URL.createObjectURL(blob));
-        };
-
-        mediaRecorder.start();
-      } catch (error) {
-        console.error('Error accessing screen:', error);
-      }
-    };
-
-    if (isScreenRecording) {
-      startScreenRecording();
-    } else {
-      // Stop the screen recording
-      mediaRecorderRef.current?.stop();
-      screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-      screenStreamRef.current = null;
-    }
-
     return () => {
-      mediaRecorderRef.current?.stop();
+      // Clean up all streams and tracks on component unmount
       screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-    };
-  }, [isScreenRecording]);
-
-  useEffect(() => {
-    const setupVideoFeed = async () => {
-      if (isVideoEnabled) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
-          videoStreamRef.current = stream;
-
-          if (videoOverlayRef.current) {
-            videoOverlayRef.current.srcObject = stream;
-          }
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-        }
-      } else {
-        // Stop the video feed when disabled
-        videoStreamRef.current?.getTracks().forEach((track) => track.stop());
-        videoStreamRef.current = null;
-      }
-    };
-
-    if (isVideoEnabled) {
-      setupVideoFeed();
-    }
-
-    return () => {
       videoStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current?.stop();
     };
-  }, [isVideoEnabled]);
+  }, []);
 
-  const toggleScreenRecording = () => {
-    setIsScreenRecording((prev) => !prev);
+  const startRecording = async () => {
+    try {
+      // Capture the screen video and audio
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: !isAudioEnabled, // Screen audio is enabled based on External audio
+      });
+      screenStreamRef.current = screenStream;
+
+      let videoStream: MediaStream | null = null;
+      let audioTracks: MediaStreamTrack[] = [];
+
+      // Enable external microphone audio if needed
+      if (isAudioEnabled) {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+          video: isVideoEnabled,
+          audio: true, // Enable external microphone audio when checkbox is checked
+        });
+        videoStreamRef.current = videoStream;
+
+        // Extract the audio tracks from the external mic stream if audio is enabled
+        audioTracks = videoStream.getAudioTracks();
+        audioTracksRef.current = audioTracks;
+      }
+
+      // Combine screen video and audio into a single stream
+      const combinedStream = new MediaStream();
+      screenStream.getVideoTracks().forEach((track) => combinedStream.addTrack(track));
+
+      // Add screen audio (always enabled) and external mic audio (if enabled)
+      combinedStream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
+      if (isAudioEnabled && audioTracks.length > 0) {
+        audioTracks.forEach((track) => combinedStream.addTrack(track));
+      }
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = 1920;
+      canvas.height = 1080;
+
+      const screenVideo = document.createElement('video');
+      screenVideo.srcObject = screenStream;
+      screenVideo.play();
+
+      let cameraVideo: HTMLVideoElement | null = null;
+      if (videoStream && isVideoEnabled) {
+        cameraVideo = document.createElement('video');
+        cameraVideo.srcObject = videoStream;
+        cameraVideo.play();
+      }
+
+      const drawFrame = () => {
+        if (ctx && screenVideo) {
+          ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+          if (cameraVideo) {
+            const overlayWidth = 320;
+            const overlayHeight = 180;
+            ctx.drawImage(
+              cameraVideo,
+              canvas.width - overlayWidth - 20,
+              canvas.height - overlayHeight - 20,
+              overlayWidth,
+              overlayHeight
+            );
+          }
+          requestAnimationFrame(drawFrame);
+        }
+      };
+
+      drawFrame();
+
+      const canvasStream = canvas.captureStream();
+      const mediaRecorder = new MediaRecorder(combinedStream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        setVideoURL(URL.createObjectURL(blob));
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+    }
   };
 
-  const toggleVideoFeed = () => {
-    setIsVideoEnabled((prev) => !prev);
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+    videoStreamRef.current?.getTracks().forEach((track) => track.stop());
+    setIsRecording(false);
   };
 
   const downloadRecording = () => {
     if (videoURL) {
       const a = document.createElement('a');
       a.href = videoURL;
-      a.download = 'screen-recording.webm';
+      a.download = 'recording.webm';
       a.click();
     }
   };
 
   const resetPreview = () => {
     setVideoURL(null);
-    screenChunksRef.current = [];
+    chunksRef.current = [];
   };
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
-      <div className="w-full max-w-4xl">
-        {!isScreenRecording ? (
-          <div className="w-full h-96 bg-gray-200 flex items-center justify-center border rounded-lg">
-            <FaDesktop size={48} className="text-gray-400" />
-            <span className="text-red-500 font-medium ml-4">Screen recording is off</span>
-          </div>
-        ) : (
-          <div className="relative w-full h-96">
-            <video
-              ref={screenVideoRef}
-              autoPlay
-              muted
-              className="w-full h-full object-contain border rounded-lg"
-            />
-            {isVideoEnabled && (
-              <div className="absolute bottom-4 right-4 w-32 h-24 border rounded-lg overflow-hidden bg-black">
-                <video
-                  ref={videoOverlayRef}
-                  autoPlay
-                  muted
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
+      <canvas
+        ref={canvasRef}
+        className="w-full max-w-4xl h-full bg-black border rounded-lg"
+      />
 
-            {/* Video Toggle Switch positioned in top-left */}
-            <label htmlFor="video-toggle" className="absolute top-4 left-4 cursor-pointer">
-              <input
-                type="checkbox"
-                id="video-toggle"
-                className="opacity-0 w-0 h-0 absolute"
-                checked={isVideoEnabled}
-                onChange={toggleVideoFeed}
-              />
-              <span
-                className={`slider round w-16 h-8 bg-gray-300 rounded-full inline-block relative transition-all duration-300 ${
-                  isVideoEnabled ? 'bg-green-500' : ''
-                }`}
-              >
-                <div
-                  className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all duration-300 ${
-                    isVideoEnabled ? 'right-1' : 'left-1'
-                  }`}
-                >
-                  {isVideoEnabled && (
-                    <FaVideo className="absolute top-1 left-1 text-green-600" size={12} />
-                  )}
-                {!isVideoEnabled && (
-                    <FaVideo className="absolute top-1 left-1 text-gray-600" size={12} />
-                  )}
-                </div>
-              </span>
-            </label>
+      <div className="flex flex-col items-center space-y-4">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={isAudioEnabled}
+            onChange={() => setIsAudioEnabled((prev) => !prev)}
+          />
+          <span>Enable External Mic Audio</span>
+        </div>
+        {isAudioEnabled && (
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={isVideoEnabled}
+              onChange={() => setIsVideoEnabled((prev) => !prev)}
+            />
+            <span>Enable Camera Video</span>
           </div>
         )}
       </div>
 
-      {/* Start/Stop Recording Button */}
       <div className="flex space-x-4">
         <button
-          className={`bg-${isScreenRecording ? 'red' : 'green'}-500 text-white px-6 py-3 rounded-lg`}
-          onClick={toggleScreenRecording}
+          className={`px-6 py-3 rounded-lg text-white ${isRecording ? 'bg-red-500' : 'bg-green-500'}`}
+          onClick={isRecording ? stopRecording : startRecording}
         >
-          {isScreenRecording ? 'Stop Screen Recording' : 'Start Screen Recording'}
+          {isRecording ? 'Stop Recording' : 'Start Recording'}
         </button>
       </div>
 
       {videoURL && (
-        <div className="w-full max-w-4xl flex flex-col items-center space-y-4 mt-6">
-          <video controls className="border rounded-lg w-full" src={videoURL} />
+        <div className="flex flex-col items-center space-y-4">
+          <video
+            controls
+            className="w-full max-w-4xl border rounded-lg"
+            src={videoURL}
+          />
           <div className="flex space-x-4">
             <button
               className="bg-blue-500 text-white px-6 py-3 rounded-lg"
