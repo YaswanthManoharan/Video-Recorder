@@ -27,7 +27,7 @@ const ScreenRecorder: React.FC = () => {
       // Capture the screen video and audio
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: !isAudioEnabled, // Screen audio is enabled based on External audio
+        audio: true, // Screen audio is enabled based on External audio
       });
       screenStreamRef.current = screenStream;
 
@@ -51,11 +51,25 @@ const ScreenRecorder: React.FC = () => {
       const combinedStream = new MediaStream();
       screenStream.getVideoTracks().forEach((track) => combinedStream.addTrack(track));
 
-      // Add screen audio (always enabled) and external mic audio (if enabled)
-      screenStream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
+      // Mix audio tracks using AudioContext
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+  
+      // Add screen audio to the mix
+      screenStream.getAudioTracks().forEach((track) => {
+        const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+        source.connect(destination);
+      });
+
       if (isAudioEnabled && audioTracks.length > 0) {
-        audioTracks.forEach((track) => combinedStream.addTrack(track));
+          audioTracks.forEach((track) => {
+          const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+          source.connect(destination);
+        });
       }
+
+      // Add the mixed audio track to the combined stream
+      destination.stream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
 
       const canvas = canvasRef.current;
       if (!canvas) return;
