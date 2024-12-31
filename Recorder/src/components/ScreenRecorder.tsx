@@ -52,7 +52,7 @@ const ScreenRecorder: React.FC = () => {
       screenStream.getVideoTracks().forEach((track) => combinedStream.addTrack(track));
 
       // Add screen audio (always enabled) and external mic audio (if enabled)
-      combinedStream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
+      screenStream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
       if (isAudioEnabled && audioTracks.length > 0) {
         audioTracks.forEach((track) => combinedStream.addTrack(track));
       }
@@ -68,12 +68,14 @@ const ScreenRecorder: React.FC = () => {
 
       const screenVideo = document.createElement('video');
       screenVideo.srcObject = screenStream;
+      screenVideo.muted = true;
       screenVideo.play();
 
       let cameraVideo: HTMLVideoElement | null = null;
       if (videoStream && isVideoEnabled) {
         cameraVideo = document.createElement('video');
         cameraVideo.srcObject = videoStream;
+        cameraVideo.muted = true;
         cameraVideo.play();
       }
 
