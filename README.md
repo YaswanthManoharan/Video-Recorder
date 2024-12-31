@@ -6,9 +6,9 @@ A versatile video recording application that supports video recording, screen re
 
 Access the deployed application here: [Video Recorder](https://video-recorder-self.vercel.app/)
 
-## Demo Username and Password
-Username: admin
-Password: admin
+**Demo Username and Password**
+- Username: admin
+- Password: admin
 
 ## Features
 
