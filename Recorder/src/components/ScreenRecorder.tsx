@@ -169,6 +169,7 @@ const ScreenRecorder: React.FC = () => {
             type="checkbox"
             checked={isAudioEnabled}
             onChange={() => setIsAudioEnabled((prev) => !prev)}
+            disabled={isRecording}
           />
           <span>Enable External Mic Audio</span>
         </div>
@@ -178,6 +179,7 @@ const ScreenRecorder: React.FC = () => {
               type="checkbox"
               checked={isVideoEnabled}
               onChange={() => setIsVideoEnabled((prev) => !prev)}
+              disabled={isRecording}
             />
             <span>Enable Camera Video</span>
           </div>
