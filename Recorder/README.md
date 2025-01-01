@@ -1,50 +1,112 @@
-# React + TypeScript + Vite
+# Video Recorder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A versatile video recording application that supports video recording, screen recording (with or without system audio), and the ability to record with or without video. This project is built with React.js, Vite, Tailwind CSS, and TypeScript.
 
-Currently, two official plugins are available:
+## Deployed Application
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Access the deployed application here: [Video Recorder](https://video-recorder-self.vercel.app/)
 
-## Expanding the ESLint configuration
+**Demo Username and Password**
+- Username: admin
+- Password: admin
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Features
 
-- Configure the top-level `parserOptions` property like this:
+- **Video Recording**: Record videos using your webcam.
+- **Screen Recording**: Capture your screen with options to include system audio.
+- **Customizable Recording Modes**: 
+  - Screen recording with or without system audio.
+  - Video recording with or without video input (audio-only mode).
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Getting Started
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Follow these steps to run the app locally.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+### Prerequisites
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+Ensure you have the following installed:
+
+- **Node.js** (version 16 or higher recommended)
+- **npm** or **yarn** (package manager)
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/YaswanthManoharan/Video-Recorder.git
+   cd Video-Recorder/Recorder
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+   or
+
+   ```bash
+   yarn install
+   ```
+
+### Running the App
+
+1. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   or
+
+   ```bash
+   yarn dev
+   ```
+
+2. Open your browser and navigate to `http://localhost:5173`.
+
+## How to Use the App
+
+### 1. **Video Recording**
+   - **Steps**:
+     1. Select the **Video Recording** option.
+     2. Allow camera and microphone permissions when prompted.
+     3. Click the **Start Recording** button to begin.
+     4. Click **Stop Recording** when finished.
+     5. Review your recording and download if desired.
+
+### 2. **Screen Recording**
+   - **Steps**:
+     1. Select the **Screen Recording** option.
+     2. Choose whether to include external audio.
+     3. Select the screen or application window to record / include system audio in the pop up if needed.
+     4. Click the **Start Recording** button to begin.
+     5. Click **Stop Recording** when finished.
+     6. Review your recording and download if desired.
+
+### 3. **Customizable Recording Modes**
+   - **Screen Recording without Video Input**:
+     - Use this mode for audio-only recording.
+     - Ensure externak audio is enabled but video is disabled in the checkbox.
+   - **Screen Recording without System Audio**:
+     - Choose not to include system audio during screen recording.
+
+## Technologies Used
+
+- **React.js** + **Vite**: For building the user interface.
+- **TypeScript**: For type safety and better developer experience.
+- **Tailwind CSS**: For styling the application.
+- **MediaRecorder API**: For recording functionalities.
+
+## Contribution
+
+Contributions are welcome! Feel free to fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+Let me know if you'd like to tweak or expand any section.
